@@ -6,7 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "journal": "./index.js"
+  },
   "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "curtis@curtisbridges.com",
+  "license": "ISC",
+  "dependencies": {
+    "yargs": "^15.1.0"
+  }
 }
