@@ -24,3 +24,4 @@ It will also have the option to spawn an editor (env var or specific to the jour
 - [ ] Create template file if needed in correct directory
 - [ ] Create directory/directories if needed
 - [ ] Open default or specified editor
+- [ ] Show stats such as streaks, percent of TODO items complete, etc.
