@@ -5,18 +5,17 @@
 // TODO: This script will not currently work in DOS/WIN based environments.
 
 // imports
-
 const fs = require('fs')
 const path = require('path')
 
 // define the initial settings for this script
-const configDir = process.env.XDG_CONFIG_HOME || '~/.config'
+const configDir = process.env.XDG_CONFIG_HOME || normalizeHomeDir('.config')
 const scriptConfigDir = `${configDir}/journal`
 const scriptConfigFile = `${scriptConfigDir}/config`
 
 let DEBUG = true
 
-let dataDir = '~/Developer/Personal/journal'
+let dataDir = normalizeHomeDir('Developer/Personal/journal')
 let dirFormat = 'yyyy/mm'
 let filetype = 'md'
 let editor = process.env.EDITOR || 'code'
@@ -42,12 +41,10 @@ readTemplateFile()
 //      --preview (explicitly state what script will do but don't do it)
 //      --stats (print stats for consecutive days, percent of TODOs complete, etc.)
 
-readCommandLineArgs(argv)
-
-const todaysJournalFile = `${dataDir}`
+readCommandLineArgs(process.argv)
 
 // switch to journal directory (create if necessary)
-const dir = createAndOpenJournalDir()
+const dir = createJournalDir()
 
 // create new journal entry
 const journal = createJournalFileWithTemplate()
@@ -58,6 +55,11 @@ openJournalWithEditor(journal, editor)
 //
 // Lower level functions
 //
+
+function normalizeHomeDir(dir) {
+    const homeDir = require('os').homedir()
+    return path.join(homeDir, dir)
+}
 
 function logSettings() {
     if (DEBUG) {
@@ -97,11 +99,24 @@ function readCommandLineArgs(argv) {
     // TODO: using yargs, parse the command line arguments and update global settings accordingly.
 }
 
-function createAndOpenJournalDir() {
-    // TODO: see if the journal directory exists
-    //   if exists, return it
-    //   else create all directories using directory format in data directory
-    //   return new directory
+/**
+ * Create a journal data directory for the current year and month if it doesn't exist.
+ */
+function createJournalDir() {
+    const currentDate = new Date()
+    const [month, date, year] = currentDate.toLocaleDateString().split("/")
+    const currentDateDir = `${dataDir}/${year}/${month.padStart(2, '0')}`
+    if (DEBUG) console.log(`Current date dir = ${currentDateDir}`)
+    if (fs.existsSync(currentDateDir)) {
+        //   if exists, return it
+        return currentDateDir
+    } else {
+        //   else create all directories using directory format in data directory
+        //   return new directory
+        const createdDir = fs.mkdirSync(currentDateDir)
+        if (DEBUG) console.log(`Created dir = ${createdDir}`)
+        return createdDir
+    }
 }
 
 // create new journal entry
