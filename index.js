@@ -12,6 +12,7 @@ const path = require('path')
 const configDir = process.env.XDG_CONFIG_HOME || normalizeHomeDir('.config')
 const scriptConfigDir = `${configDir}/journal`
 const scriptConfigFile = `${scriptConfigDir}/config`
+const journalTemplateFile = `${configDir}/template`
 
 let DEBUG = true
 
@@ -32,7 +33,7 @@ logSettings()
 //  - read editor
 
 readConfigFile()
-readTemplateFile()
+const journalTemplate = readTemplateFile()
 
 // parse command line args. If they exist, they override everything above.
 //  possible args:
@@ -44,10 +45,10 @@ readTemplateFile()
 readCommandLineArgs(process.argv)
 
 // switch to journal directory (create if necessary)
-const dir = createJournalDir()
+createJournalDir()
 
 // create new journal entry
-const journal = createJournalFileWithTemplate()
+const journal = createJournalFileWithTemplate(journalTemplate)
 
 // open file with default editor
 openJournalWithEditor(journal, editor)
@@ -90,11 +91,17 @@ function readConfigFile() {
 }
 
 function readTemplateFile() {
-    // TODO: if the template file specified in the config file exists, return its contents
-    // else return an empty string as the template.
-    return ''
+    // attempt to read the template file
+    try {
+        // and return its contents if it exists...
+        return fs.readFileSync(journalTemplateFile, 'utf8')
+    } catch (err) {
+        // config file doesn't exist, continue...
+        // else return an empty string as the template.
+        if (DEBUG) console.log(`No configuration file. Using default settings. [OK]`)
+        return ''
+    }
 }
-
 function readCommandLineArgs(argv) {
     // TODO: using yargs, parse the command line arguments and update global settings accordingly.
 }
@@ -103,8 +110,7 @@ function readCommandLineArgs(argv) {
  * Create a journal data directory for the current year and month if it doesn't exist.
  */
 function createJournalDir() {
-    const currentDate = new Date()
-    const [month, date, year] = currentDate.toLocaleDateString().split("/")
+    const [month, date, year] = currentDateParts()
     const currentDateDir = `${dataDir}/${year}/${month.padStart(2, '0')}`
     if (DEBUG) console.log(`Current date dir = ${currentDateDir}`)
     if (fs.existsSync(currentDateDir)) {
@@ -120,14 +126,30 @@ function createJournalDir() {
 }
 
 // create new journal entry
-function createJournalFileWithTemplate() {
+function createJournalFileWithTemplate(template) {
     // TODO: see if the journal entry exists
-    //      if exists, return it
-    //      else using the current journal format and filetype, create the new file
-    //      and return it
+    const [month, date, year] = currentDateParts()
+    const currentDateFile = `${dataDir}/${year}/${month.padStart(2, '0')}/${date.padStart(2, '0')}.${filetype}`
+    if (DEBUG) console.log(`Current date file = ${currentDateFile}`)
+    if (fs.existsSync(currentDateFile)) {
+        //   if exists, return it
+        return currentDateFile
+    } else {
+        //   else using the current journal format and filetype, create the new file
+        //   return new file
+        fs.appendFileSync(currentDateFile, template)
+        if (DEBUG) console.log(`Created file = ${currentDateFile}`)
+        return currentDateFile
+    }
 }
 
 // open file with default editor
 function openJournalWithEditor(journal, editor) {
     // TODO: open the journal file with the editor of choice
+    console.log(`Open ${journal} with ${process.env.EDITOR}`)
+}
+
+function currentDateParts() {
+    const currentDate = new Date()
+    return [month, date, year] = currentDate.toLocaleDateString().split("/")
 }
