@@ -8,18 +8,20 @@
 const fs = require('fs')
 const path = require('path')
 
+const { exec } = require("child_process");
+
 // define the initial settings for this script
 const configDir = process.env.XDG_CONFIG_HOME || normalizeHomeDir('.config')
 const scriptConfigDir = `${configDir}/journal`
 const scriptConfigFile = `${scriptConfigDir}/config`
-const journalTemplateFile = `${configDir}/template`
+const journalTemplateFile = `${scriptConfigDir}/template`
 
 let DEBUG = true
 
 let dataDir = normalizeHomeDir('Developer/Personal/journal')
 let dirFormat = 'yyyy/mm'
 let filetype = 'md'
-let editor = process.env.EDITOR || 'code'
+let editor = process.env.VISUAL || process.env.EDITOR || 'code'
 let requestPermission = false
 let stats = false
 
@@ -98,7 +100,7 @@ function readTemplateFile() {
     } catch (err) {
         // config file doesn't exist, continue...
         // else return an empty string as the template.
-        if (DEBUG) console.log(`No configuration file. Using default settings. [OK]`)
+        if (DEBUG) console.log(`No template file. Using default empty file. [OK]`)
         return ''
     }
 }
@@ -145,8 +147,18 @@ function createJournalFileWithTemplate(template) {
 
 // open file with default editor
 function openJournalWithEditor(journal, editor) {
-    // TODO: open the journal file with the editor of choice
-    console.log(`Open ${journal} with ${process.env.EDITOR}`)
+    if (DEBUG) console.log(`Open ${journal} with ${editor}`)
+    exec(`${editor} ${journal}`, (error, stdout, stderr) => {
+        if (error) {
+            console.log(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.log(`stderr: ${stderr}`);
+            return;
+        }
+        if (DEBUG) console.log(`stdout: ${stdout}`);
+    })
 }
 
 function currentDateParts() {
