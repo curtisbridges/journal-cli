@@ -20,8 +20,8 @@ It will also have the option to spawn an editor (env var or specific to the jour
 
 ## TODO
 - [ ] Parse command line arguments
-- [ ] Parse config files
-- [ ] Create template file if needed in correct directory
-- [ ] Create directory/directories if needed
-- [ ] Open default or specified editor
+- [x] Parse config files
+- [x] Create template file if needed in correct directory
+- [x] Create directory/directories if needed
+- [x] Open default or specified editor
 - [ ] Show stats such as streaks, percent of TODO items complete, etc.
