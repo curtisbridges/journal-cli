@@ -1,4 +1,4 @@
-#!/usr/local/bin/env node
+#!/usr/bin/env node
 // Leaving the above script notation for now. I don't think I want to invoke that way but
 // I'm going to leave it here for reference.
 
@@ -7,8 +7,10 @@
 // imports
 const fs = require('fs')
 const path = require('path')
-
 const { exec } = require("child_process");
+
+const keyvalue = require('./key-value');
+const { strict } = require('yargs');
 
 // define the initial settings for this script
 const configDir = process.env.XDG_CONFIG_HOME || normalizeHomeDir('.config')
@@ -16,16 +18,33 @@ const scriptConfigDir = `${configDir}/journal`
 const scriptConfigFile = `${scriptConfigDir}/config`
 const journalTemplateFile = `${scriptConfigDir}/template`
 
-let DEBUG = true
+// TODO: Implement a config object rather than individual variables.
+let DEBUG = false
 
 let dataDir = normalizeHomeDir('Developer/Personal/journal')
 let dirFormat = 'yyyy/mm'
 let filetype = 'md'
-let editor = process.env.VISUAL || process.env.EDITOR || 'code'
+let openEditor = false
+let editor = process.env.VISUAL || process.env.EDITOR || 'vi'
 let requestPermission = false
 let stats = false
 
-logSettings()
+//
+// Config file keys
+//
+const dataDirKey = 'data'
+const templateKey = 'template'
+const openEditorKey = 'openEditor'
+const editorKey = 'editor'
+const dirFormatKey = 'dirFormat'
+const filetypeKey = 'filetype'
+const permissionKey = 'permission'
+const statsKey = 'stats'
+const debugKey = 'debug'
+
+//
+// Main Execution Logic
+//
 
 // read config file. If it exists, it overrides the settings above.
 //  - read directory format (yyyy/mm vs yy-mm vs ??)
@@ -45,6 +64,8 @@ const journalTemplate = readTemplateFile()
 //      --stats (print stats for consecutive days, percent of TODOs complete, etc.)
 
 readCommandLineArgs(process.argv)
+
+logSettings()
 
 // switch to journal directory (create if necessary)
 createJournalDir()
@@ -74,6 +95,7 @@ function logSettings() {
         console.log(`DIR FORMAT = ${dirFormat}`)
         console.log(`FILETYPE = ${filetype}`)
 
+        console.log(`OPEN EDITOR = ${openEditor}`)
         console.log(`EDITOR = ${editor}`)
 
         console.log(`REQUEST PERMISSIONS = ${requestPermission}`)
@@ -82,14 +104,18 @@ function logSettings() {
 }
 
 function readConfigFile() {
-    try {
-        const config = fs.readFileSync(scriptConfigFile, 'utf8')
-        if (DEBUG) console.log(config)
-        // TODO: update global settings accordingly
-    } catch (err) {
-        // config file doesn't exist, continue...
-        if (DEBUG) console.log(`No configuration file. Using default settings. [OK]`)
-    }
+    const settings = keyvalue.readFromFile(scriptConfigFile)
+    if (DEBUG) console.log(`SETTINGS = ${JSON.stringify(settings)}`)
+
+    if (settings[dataDirKey]) dataDir = settings[dataDirKey]
+    if (settings[templateKey]) template = settings[templateKey]
+    if (settings[openEditorKey]) openEditor = settings[openEditorKey]
+    if (settings[editorKey]) editor = settings[editorKey]
+    if (settings[dirFormatKey]) dirFormat = settings[dirFormatKey]
+    if (settings[filetypeKey]) filetype = settings[filetypeKey]
+    if (settings[permissionKey]) requestPermission = settings[permissionKey]
+    if (settings[statsKey]) stats = settings[statsKey]
+    if (settings[debugKey]) DEBUG = settings[debugKey]
 }
 
 function readTemplateFile() {
@@ -104,6 +130,7 @@ function readTemplateFile() {
         return ''
     }
 }
+
 function readCommandLineArgs(argv) {
     // TODO: using yargs, parse the command line arguments and update global settings accordingly.
 }
@@ -129,10 +156,10 @@ function createJournalDir() {
 
 // create new journal entry
 function createJournalFileWithTemplate(template) {
-    // TODO: see if the journal entry exists
     const [month, date, year] = currentDateParts()
     const currentDateFile = `${dataDir}/${year}/${month.padStart(2, '0')}/${date.padStart(2, '0')}.${filetype}`
     if (DEBUG) console.log(`Current date file = ${currentDateFile}`)
+    // see if the journal entry exists
     if (fs.existsSync(currentDateFile)) {
         //   if exists, return it
         return currentDateFile
@@ -157,7 +184,7 @@ function openJournalWithEditor(journal, editor) {
             console.log(`stderr: ${stderr}`);
             return;
         }
-        if (DEBUG) console.log(`stdout: ${stdout}`);
+        // if (DEBUG) console.log(`stdout: ${stdout}`);
     })
 }
 
