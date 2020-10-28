@@ -104,18 +104,26 @@ function logSettings() {
 }
 
 function readConfigFile() {
-    const settings = keyvalue.readFromFile(scriptConfigFile)
-    if (DEBUG) console.log(`SETTINGS = ${JSON.stringify(settings)}`)
+    let settings = {}
 
-    if (settings[dataDirKey]) dataDir = settings[dataDirKey]
-    if (settings[templateKey]) template = settings[templateKey]
-    if (settings[openEditorKey]) openEditor = settings[openEditorKey]
-    if (settings[editorKey]) editor = settings[editorKey]
-    if (settings[dirFormatKey]) dirFormat = settings[dirFormatKey]
-    if (settings[filetypeKey]) filetype = settings[filetypeKey]
-    if (settings[permissionKey]) requestPermission = settings[permissionKey]
-    if (settings[statsKey]) stats = settings[statsKey]
-    if (settings[debugKey]) DEBUG = settings[debugKey]
+    try {
+        settings = keyvalue.readFromFile(scriptConfigFile)
+        if (DEBUG) console.log(`SETTINGS = ${JSON.stringify(settings)}`)
+
+        if (settings[dataDirKey]) dataDir = settings[dataDirKey]
+        if (settings[templateKey]) template = settings[templateKey]
+        if (settings[openEditorKey]) openEditor = settings[openEditorKey]
+        if (settings[editorKey]) editor = settings[editorKey]
+        if (settings[dirFormatKey]) dirFormat = settings[dirFormatKey]
+        if (settings[filetypeKey]) filetype = settings[filetypeKey]
+        if (settings[permissionKey]) requestPermission = settings[permissionKey]
+        if (settings[statsKey]) stats = settings[statsKey]
+        if (settings[debugKey]) DEBUG = settings[debugKey]
+    } catch (err) {
+        console.log(`Problem reading from config file: ${err.message}`)
+    }
+
+    return settings
 }
 
 function readTemplateFile() {
