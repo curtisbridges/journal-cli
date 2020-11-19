@@ -7,10 +7,18 @@
 // imports
 const fs = require('fs')
 const path = require('path')
-const { exec } = require("child_process");
+const spawn = require('child_process').spawn;
+//const argv = require('yargs').argv
+    // version
+    // .alias('v', 'version')
+    // .version(function () { return require('../package').version; })
+    // .describe('v', 'show version information')
+
+    // help text
+    // .alias('h', 'help')
+    // .help('help')
 
 const keyvalue = require('./key-value');
-const { strict } = require('yargs');
 
 // define the initial settings for this script
 const configDir = process.env.XDG_CONFIG_HOME || normalizeHomeDir('.config')
@@ -62,8 +70,6 @@ const journalTemplate = readTemplateFile()
 //      --filetype=(file extension)
 //      --preview (explicitly state what script will do but don't do it)
 //      --stats (print stats for consecutive days, percent of TODOs complete, etc.)
-
-readCommandLineArgs(process.argv)
 
 logSettings()
 
@@ -139,10 +145,6 @@ function readTemplateFile() {
     }
 }
 
-function readCommandLineArgs(argv) {
-    // TODO: using yargs, parse the command line arguments and update global settings accordingly.
-}
-
 /**
  * Create a journal data directory for the current year and month if it doesn't exist.
  */
@@ -164,39 +166,38 @@ function createJournalDir() {
 
 // create new journal entry
 function createJournalFileWithTemplate(template) {
-    const [month, date, year] = currentDateParts()
-    const currentDateFile = `${dataDir}/${year}/${month.padStart(2, '0')}/${date.padStart(2, '0')}.${filetype}`
-    if (DEBUG) console.log(`Current date file = ${currentDateFile}`)
-    // see if the journal entry exists
-    if (fs.existsSync(currentDateFile)) {
-        //   if exists, return it
-        return currentDateFile
-    } else {
-        //   else using the current journal format and filetype, create the new file
-        //   return new file
-        fs.appendFileSync(currentDateFile, template)
-        if (DEBUG) console.log(`Created file = ${currentDateFile}`)
-        return currentDateFile
-    }
+  const [month, date, year] = currentDateParts();
+  const currentDateFile = `${dataDir}/${year}/${month.padStart(
+    2,
+    '0'
+  )}/${date.padStart(2, '0')}.${filetype}`;
+  if (DEBUG) console.log(`Current date file = ${currentDateFile}`);
+  // TODO: replace template tokens (ex: {{DATE}} with today's date
+  // see if the journal entry exists
+  if (fs.existsSync(currentDateFile)) {
+    //   if exists, return it
+    return currentDateFile;
+  } else {
+    //   else using the current journal format and filetype, create the new file
+    //   return new file
+    fs.appendFileSync(currentDateFile, template);
+    if (DEBUG) console.log(`Created file = ${currentDateFile}`);
+    return currentDateFile;
+  }
 }
 
 // open file with default editor
 function openJournalWithEditor(journal, editor) {
-    if (DEBUG) console.log(`Open ${journal} with ${editor}`)
-    exec(`${editor} ${journal}`, (error, stdout, stderr) => {
-        if (error) {
-            console.log(`error: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.log(`stderr: ${stderr}`);
-            return;
-        }
-        // if (DEBUG) console.log(`stdout: ${stdout}`);
-    })
+  if (DEBUG) console.log(`Open ${journal} with ${editor}`);
+  // TODO Fix spawning journal with terminal editors...
+  const stream = spawn(`${editor}`, [`${journal}`]);
+  stream.on('close', (code) => {
+    console.log(`editor child process exited with code ${code}`);
+  });
 }
 
 function currentDateParts() {
     const currentDate = new Date()
     return [month, date, year] = currentDate.toLocaleDateString().split("/")
 }
+
