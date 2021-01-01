@@ -158,7 +158,7 @@ function createJournalDir() {
     } else {
         //   else create all directories using directory format in data directory
         //   return new directory
-        const createdDir = fs.mkdirSync(currentDateDir)
+        const createdDir = fs.mkdirSync(currentDateDir, { recursive: true });
         if (DEBUG) console.log(`Created dir = ${createdDir}`)
         return createdDir
     }
